@@ -1,29 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
-  Inert Maven metadata. No code, no executable content. Unauthenticated GET only.
+  Inert Maven metadata. Unauthenticated GET only.
 
-  RUN 3: a THREE-WAY differential, all three outcomes visible in one proxy log.
+  RUN 4 tests lead-03: src/proxy/internal/handlers/git_server.go attaches the job's
+  github.com git_source credential to ANY path, because a credential with no
+  accessible-repos is stored under allReposScopeIdentifier ("" , git_server.go:224)
+  and getCredentialsForRequest returns it for every path except /_dependabot.
 
-  Run 2 proved, in GitHub's own proxy log, that .github.net is refused
-  ("* egress not allowlisted" -> 403) while .githubapp.com is FORWARDED. What it
-  could not show is a real service answering, because both arms were hostnames we
-  had invented. This run supplies real ones.
+  d1 is a github.com path that is plainly NOT a git endpoint and NOT a repository.
+  If the proxy logs "* authenticating git server request (host: github.com)" for it,
+  the credential is being attached to an attacker-chosen non-git path in production.
 
-  c1/c2 are the ONLY two of 93 real *.githubapp.com hostnames found in public
-  certificate-transparency logs that do NOT resolve on the public internet
-  (measured 2026-11-06). They hold valid TLS certificates, so the services exist;
-  they are simply not publicly resolvable. Neither is on the programme's
-  githubapp.com exclusion list (atom-io, atom-io-staging,
-  email.enterprise-staging, email.haystack, reply).
-
-  The other 91 resolve publicly and are DELIBERATELY EXCLUDED: reaching those
-  would be "public internet" egress, which this programme states is INELIGIBLE.
-
-  Expected proxy log lines, and each one answers a different question:
-    c1/c2  an HTTP status            -> PERMITTED AND SOMETHING ANSWERED = internal reach
-    c3     "No response from server" -> PERMITTED, host absent (the baseline for "allowed")
-    c4     "* egress not allowlisted"-> REFUSED (the baseline for "blocked")
+  d2 is the known-blocked control so the job still reports a deterministic error.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
@@ -34,20 +23,12 @@
 
   <repositories>
     <repository>
-      <id>c1-nines-internal-only</id>
-      <url>https://nines.githubapp.com/c1</url>
+      <id>d1-github-com-non-git-path</id>
+      <url>https://github.com/pages/auth-probe-9f3a2b</url>
     </repository>
     <repository>
-      <id>c2-nines-staging-internal-only</id>
-      <url>https://nines-staging.githubapp.com/c2</url>
-    </repository>
-    <repository>
-      <id>c3-baseline-permitted-but-absent</id>
-      <url>http://nonexistent-9f3a2b.githubapp.com/c3</url>
-    </repository>
-    <repository>
-      <id>c4-baseline-blocked</id>
-      <url>http://nonexistent-9f3a2b.github.net/c4</url>
+      <id>d2-baseline-blocked</id>
+      <url>http://nonexistent-9f3a2b.github.net/d2</url>
     </repository>
   </repositories>
 </project>

@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
-  This file is inert Maven metadata. It contains no code and no executable content.
-  It exists to measure, in a repository the researcher owns, whether repository URLs
-  declared in a REMOTELY FETCHED parent POM are honoured by the Dependabot updater,
-  and whether the Dependabot egress proxy permits the resulting destinations.
-  ARM A target is ssrf-target.iad.github.net, which is GitHub's OWN PUBLISHED SSRF
-  test host (see bounty.github.com/targets/github-net.html).
+  Inert Maven metadata. No code, no executable content.
+
+  RUN 2: a ONE-VARIABLE differential with ZERO blast radius.
+  Both hostnames below use the SAME nonexistent label and differ ONLY in the
+  domain, which is exactly what the Dependabot egress allowlist keys on.
+  NEITHER HOST EXISTS, so no real GitHub service is contacted by anything.
+
+    arm B  .githubapp.com  IS on the proxy's always-allow list
+    arm A  .github.net     is NOT on it
+
+  dependabot-core reports only `forbidden_urls.first`, and a host that answers
+  401/403 is the only kind that lands there. Arm B is listed FIRST, so:
+    reported host = arm B  -> githubapp.com was ALSO refused (allowlist not permissive)
+    reported host = arm A  -> githubapp.com was NOT refused (allowlist permitted it)
+  The reported hostname IS the measurement.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
@@ -16,15 +25,13 @@
   <packaging>pom</packaging>
 
   <repositories>
-    <!-- ARM A: *.github.net is NOT on the proxy allowlist. Expect 403 if enforce is on. -->
     <repository>
-      <id>arm-a-github-net</id>
-      <url>http://ssrf-target.iad.github.net/arm-a</url>
+      <id>arm-b-githubapp-allowlisted</id>
+      <url>http://nonexistent-9f3a2b.githubapp.com/arm-b</url>
     </repository>
-    <!-- ARM B: .githubapp.com IS on the proxy allowlist (github_infra_domains). -->
     <repository>
-      <id>arm-b-githubapp</id>
-      <url>http://ssrf-probe-arm-b.githubapp.com/arm-b</url>
+      <id>arm-a-githubnet-not-allowlisted</id>
+      <url>http://nonexistent-9f3a2b.github.net/arm-a</url>
     </repository>
   </repositories>
 </project>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
+  Inert Maven metadata. Unauthenticated GET only.
+
+  RUN 4b tests lead-03. Published at a NEW version path (1.0.1) specifically to
+  defeat the raw.githubusercontent.com CDN cache, which served run 4 a stale
+  run-3 body.
+
+  d1 is a github.com URL whose path is plainly NOT a git endpoint and NOT a
+  repository. Per src/proxy/internal/handlers/git_server.go, a git_source
+  credential with no accessible-repos is stored under allReposScopeIdentifier
+  ("", :224) and getCredentialsForRequest (:445-482) returns it for EVERY path
+  except /_dependabot, with no git-endpoint check. A GET is classed read-only
+  (:323-331), so authentication proceeds.
+
+  ORACLE: if the proxy logs
+      * authenticating git server request (host: github.com)
+  against the d1 request id, the victim's credential is attached to an
+  attacker-chosen non-git path in production.
+
+  d2 is the known-blocked control.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.bbresearch</groupId>
+  <artifactId>egress-probe-parent</artifactId>
+  <version>1.0.1</version>
+  <packaging>pom</packaging>
+
+  <repositories>
+    <repository>
+      <id>d1-github-com-non-git-path</id>
+      <url>https://github.com/pages/auth-probe-9f3a2b</url>
+    </repository>
+    <repository>
+      <id>d2-baseline-blocked</id>
+      <url>http://nonexistent-9f3a2b.github.net/d2</url>
+    </repository>
+  </repositories>
+</project>

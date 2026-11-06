@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
+  This file is inert Maven metadata. It contains no code and no executable content.
+  It exists to measure, in a repository the researcher owns, whether repository URLs
+  declared in a REMOTELY FETCHED parent POM are honoured by the Dependabot updater,
+  and whether the Dependabot egress proxy permits the resulting destinations.
+  ARM A target is ssrf-target.iad.github.net, which is GitHub's OWN PUBLISHED SSRF
+  test host (see bounty.github.com/targets/github-net.html).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.bbresearch</groupId>
+  <artifactId>egress-probe-parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <repositories>
+    <!-- ARM A: *.github.net is NOT on the proxy allowlist. Expect 403 if enforce is on. -->
+    <repository>
+      <id>arm-a-github-net</id>
+      <url>http://ssrf-target.iad.github.net/arm-a</url>
+    </repository>
+    <!-- ARM B: .githubapp.com IS on the proxy allowlist (github_infra_domains). -->
+    <repository>
+      <id>arm-b-githubapp</id>
+      <url>http://ssrf-probe-arm-b.githubapp.com/arm-b</url>
+    </repository>
+  </repositories>
+</project>

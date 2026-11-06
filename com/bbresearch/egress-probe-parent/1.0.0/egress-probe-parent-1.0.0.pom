@@ -1,30 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
-  Inert Maven metadata. No code, no executable content. GET requests only.
+  Inert Maven metadata. No code, no executable content. Unauthenticated GET only.
 
-  RUN 3: does the permitted .githubapp.com reach a REAL internal service?
+  RUN 3: a THREE-WAY differential, all three outcomes visible in one proxy log.
 
-  Runs 1 and 2 proved: the injection works against the hosted service, the egress
-  allowlist IS enforcing (proxy-egress-enforce: true in the job definition), and it
-  REFUSES .github.net while PERMITTING .githubapp.com. What is still unproven is
-  whether anything real answers on the permitted domain.
+  Run 2 proved, in GitHub's own proxy log, that .github.net is refused
+  ("* egress not allowlisted" -> 403) while .githubapp.com is FORWARDED. What it
+  could not show is a real service answering, because both arms were hostnames we
+  had invented. This run supplies real ones.
 
-  Every candidate below is NXDOMAIN on the public internet (measured 2026-11-06), so
-  each is either absent entirely or resolvable only inside GitHub's network. None is
-  on the programme's githubapp.com exclusion list (atom-io, atom-io-staging,
+  c1/c2 are the ONLY two of 93 real *.githubapp.com hostnames found in public
+  certificate-transparency logs that do NOT resolve on the public internet
+  (measured 2026-11-06). They hold valid TLS certificates, so the services exist;
+  they are simply not publicly resolvable. Neither is on the programme's
+  githubapp.com exclusion list (atom-io, atom-io-staging,
   email.enterprise-staging, email.haystack, reply).
 
-  DELIBERATELY NOT USED: bastion.githubapp.com and ops.githubapp.com both resolve
-  PUBLICLY, so reaching those would be "public internet" egress, which this
-  programme states is an INELIGIBLE escape. They are excluded on purpose.
+  The other 91 resolve publicly and are DELIBERATELY EXCLUDED: reaching those
+  would be "public internet" egress, which this programme states is INELIGIBLE.
 
-  dependabot-core reports only `forbidden_urls.first`, and only a 401/403 lands
-  there. The control is LAST, so:
-    reported host is a githubapp.com name -> a real internal service answered with
-                                             an auth gate. That is internal reach.
-    reported host is the .github.net one  -> no candidate auth-gated; read the proxy
-                                             log for what each one actually did.
+  Expected proxy log lines, and each one answers a different question:
+    c1/c2  an HTTP status            -> PERMITTED AND SOMETHING ANSWERED = internal reach
+    c3     "No response from server" -> PERMITTED, host absent (the baseline for "allowed")
+    c4     "* egress not allowlisted"-> REFUSED (the baseline for "blocked")
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
@@ -35,28 +34,20 @@
 
   <repositories>
     <repository>
-      <id>c1-haystack</id>
-      <url>http://haystack.githubapp.com/c1</url>
+      <id>c1-nines-internal-only</id>
+      <url>https://nines.githubapp.com/c1</url>
     </repository>
     <repository>
-      <id>c2-help</id>
-      <url>http://help.githubapp.com/c2</url>
+      <id>c2-nines-staging-internal-only</id>
+      <url>https://nines-staging.githubapp.com/c2</url>
     </repository>
     <repository>
-      <id>c3-admin</id>
-      <url>http://admin.githubapp.com/c3</url>
+      <id>c3-baseline-permitted-but-absent</id>
+      <url>http://nonexistent-9f3a2b.githubapp.com/c3</url>
     </repository>
     <repository>
-      <id>c4-internal</id>
-      <url>http://internal.githubapp.com/c4</url>
-    </repository>
-    <repository>
-      <id>c5-blog</id>
-      <url>http://blog.githubapp.com/c5</url>
-    </repository>
-    <repository>
-      <id>control-githubnet-known-refused</id>
-      <url>http://nonexistent-9f3a2b.github.net/control</url>
+      <id>c4-baseline-blocked</id>
+      <url>http://nonexistent-9f3a2b.github.net/c4</url>
     </repository>
   </repositories>
 </project>

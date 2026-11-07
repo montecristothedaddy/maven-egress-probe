@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
+  Inert Maven metadata, unauthenticated GET for a deliberately NONEXISTENT artifact path.
+
+  RUN 7 is the decisive measurement. Three arms, each with one job.
+
+  What runs 5 and 6 established:
+    - The egress allowlist is NAME-based with no address check. consul-acl.githubapp.com is
+      permitted; the identical destination as a bare IP (10.157.12.74) is refused with
+      "* egress not allowlisted 10.157.12.74" and a 403.
+    - Port 8500 is unreachable from the job for ANY host: run 6's j4, a PUBLIC allowlisted
+      host on :8500, timed out exactly like the internal one. So run 6 measured the port,
+      not the host.
+    - A host that times out is SKIPPED for the rest of the job, which is why run 5's i2 and
+      run 6's j2 and j5 never reached the proxy at all. Arm order therefore decides what
+      gets measured, and the arm of interest must come first and sit alone on its host.
+    - Port 443 on an allowlisted .githubapp.com name IS reachable: run 6's j3 answered 404.
+
+  So k1 is the whole experiment: the internal address, reached through its allowlisted
+  public name, on the one port already proven reachable, first in the list, with no other
+  arm on that host to poison it.
+
+  k2 confirms the run is live at all. k3 settles whether port 80 is reachable in general,
+  which retro-validates run 5's i1 timeout: if k3 answers, i1's timeout was about the host;
+  if k3 times out, :80 is blocked for everything and i1 said nothing either.
+
+  ORACLE: any HTTP status on k1 proves the job reached a host on GitHub's private network.
+  The artifact does not exist, so a reachable service answers 404/403 and returns no data.
+  That is the entire proof; nothing further is attempted and no data is read.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.bbresearch</groupId>
+  <artifactId>egress-probe-parent</artifactId>
+  <version>1.0.4</version>
+  <packaging>pom</packaging>
+
+  <repositories>
+    <repository>
+      <id>k1-THE-ARM-internal-via-allowlisted-name-port-443</id>
+      <url>https://consul-acl.githubapp.com/k1</url>
+    </repository>
+    <repository>
+      <id>k2-CONTROL-public-allowlisted-443</id>
+      <url>https://customer-stories.githubapp.com/k2</url>
+    </repository>
+    <repository>
+      <id>k3-PORT80-CONTROL-public-allowlisted-80</id>
+      <url>http://customer-stories.githubapp.com/k3</url>
+    </repository>
+  </repositories>
+</project>

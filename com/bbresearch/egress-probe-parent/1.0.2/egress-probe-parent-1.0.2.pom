@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
+  Inert Maven metadata. Unauthenticated GET for a deliberately NONEXISTENT artifact path only.
+
+  RUN 5 asks the one question that decides whether the Dependabot egress primitive is
+  payable: does the update job's network position reach a host on GitHub's INTERNAL
+  network? The programme's Dependabot asset text names reaching private networked
+  resources as eligible, and names reaching the public internet as INELIGIBLE.
+
+  RUN 3 concluded "no internal reach", but its internal arms were nines.githubapp.com and
+  nines-staging.githubapp.com. Those are DEAD names: their CNAME targets
+  (ninesapp-app-service{,-staging}.azurewebsites.net) are NXDOMAIN for everyone, inside or
+  out. Their failure to resolve inside the job therefore proves nothing about network
+  position. Run 3's other arms were invented hostnames. So the question is still open.
+
+  i1/i2 are the valid arm. consul-acl.githubapp.com has a PUBLIC DNS record resolving to
+  10.157.12.74, which is RFC1918. The name is under .githubapp.com, which the proxy's
+  egress allowlist permits in leading-dot form. So the name resolves for anyone but the
+  address is routable only from inside.
+
+  ORACLE: i1 or i2 returning ANY HTTP status proves the job reached an internal host.
+  The requested artifact does not exist, so a reachable service answers 404/403 and
+  returns no data at all. That is the whole proof; nothing further is attempted.
+
+  i3 is the CONTROL: an allowlisted name on a PUBLIC address that answers today. Without
+  it a wall of failures would prove nothing, which was run 3's defect.
+  i4 isolates the lever: the same private address as a bare IP, with no hostname.
+  i5 is a secondary split-horizon oracle (internal CNAME target, NXDOMAIN publicly).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.bbresearch</groupId>
+  <artifactId>egress-probe-parent</artifactId>
+  <version>1.0.2</version>
+  <packaging>pom</packaging>
+
+  <repositories>
+    <repository>
+      <id>i1-internal-rfc1918-via-allowlisted-name</id>
+      <url>http://consul-acl.githubapp.com/i1</url>
+    </repository>
+    <repository>
+      <id>i2-internal-rfc1918-consul-api-port</id>
+      <url>http://consul-acl.githubapp.com:8500/i2</url>
+    </repository>
+    <repository>
+      <id>i3-CONTROL-allowlisted-name-public-address</id>
+      <url>https://customer-stories.githubapp.com/i3</url>
+    </repository>
+    <repository>
+      <id>i4-bare-private-ip-no-hostname</id>
+      <url>http://10.157.12.74/i4</url>
+    </repository>
+    <repository>
+      <id>i5-internal-cname-nxdomain-publicly</id>
+      <url>http://nexpose.githubapp.com/i5</url>
+    </repository>
+  </repositories>
+</project>

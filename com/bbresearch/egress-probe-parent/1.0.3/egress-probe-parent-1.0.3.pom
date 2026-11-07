@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AUTHORIZED SECURITY RESEARCH FIXTURE - GitHub Security Bug Bounty (HackerOne: github).
+  Inert Maven metadata, unauthenticated GET for a deliberately NONEXISTENT artifact path.
+
+  RUN 6 resolves the one ambiguity left by run 5.
+
+  Run 5 measured, on consul-acl.githubapp.com (public DNS -> 10.157.12.74, RFC1918):
+    - the name RESOLVED inside the job (no "no such host", unlike run 3's dead names)
+    - the egress allowlist PERMITTED it (no "egress not allowlisted" line)
+    - the TCP connection to :80 TIMED OUT, 4 times, 20s each
+    - the SAME address written as a bare IP was REFUSED: "egress not allowlisted 10.157.12.74"
+    - control (customer-stories.githubapp.com, allowlisted, public address) answered 404
+
+  A timeout on port 80 does not distinguish "no route to 10/8" from "nothing listening on
+  port 80". Consul's HTTP API is on 8500. Run 5's :8500 arm never reached the proxy at all,
+  which is itself unexplained: dedup in repositories_finder.rb:88 is by repository id, and
+  the ids differed, so it was not deduped there.
+
+  j4 is the control that makes the whole run interpretable: an explicit :8500 on a PUBLIC
+  allowlisted host. If j4 also fails to appear in the proxy log, then an explicit
+  non-standard port is dropped somewhere in the client, and j1's absence says nothing about
+  the internal host. If j4 DOES appear, then j1's result is about the host.
+
+  ORACLE: any HTTP status on j1, j2 or j5 proves the job reached a host on GitHub's private
+  network. The artifact does not exist, so a reachable service answers 404/403 and returns
+  no data. That is the entire proof; nothing further is attempted.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.bbresearch</groupId>
+  <artifactId>egress-probe-parent</artifactId>
+  <version>1.0.3</version>
+  <packaging>pom</packaging>
+
+  <repositories>
+    <repository>
+      <id>j1-internal-consul-api-port-8500</id>
+      <url>http://consul-acl.githubapp.com:8500/j1</url>
+    </repository>
+    <repository>
+      <id>j2-internal-https-443</id>
+      <url>https://consul-acl.githubapp.com/j2</url>
+    </repository>
+    <repository>
+      <id>j3-CONTROL-public-allowlisted-standard-port</id>
+      <url>https://customer-stories.githubapp.com/j3</url>
+    </repository>
+    <repository>
+      <id>j4-PORT-CONTROL-public-allowlisted-port-8500</id>
+      <url>http://customer-stories.githubapp.com:8500/j4</url>
+    </repository>
+    <repository>
+      <id>j5-internal-explicit-port-443-http-scheme</id>
+      <url>http://consul-acl.githubapp.com:443/j5</url>
+    </repository>
+  </repositories>
+</project>
